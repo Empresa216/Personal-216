@@ -307,6 +307,11 @@
   .ingreso-toggle input{width:16px;height:16px;accent-color:#a78bfa;}
   .ingreso-toggle:has(input:checked){border-color:#a78bfa;background:rgba(167,139,250,0.15);color:#a78bfa;}
 
+  .rechazo-section{background:var(--rojo-bg);border-top:1px solid var(--border);border-radius:10px;padding:12px;margin-top:12px;}
+  .rechazo-toggle{cursor:pointer;font-family:'Inter',sans-serif !important;font-weight:600;font-size:13.5px;}
+  .rechazo-toggle input{width:16px;height:16px;accent-color:var(--rojo);}
+  .rechazo-toggle:has(input:checked){border-color:var(--rojo);background:rgba(255,92,104,0.15);color:var(--rojo);}
+
   tr.row-ingresado{box-shadow:inset 3px 0 0 #a78bfa !important;}
   .stat.ingresado::before{background:#a78bfa;}
 
@@ -515,71 +520,27 @@
 
   <div id="postulantesSection" class="hidden">
 
-    <div class="stats" style="grid-template-columns:repeat(5,1fr);">
-      <div class="stat total"><div class="n" id="pStatTotal">0</div><div class="l">Postulantes</div></div>
-      <div class="stat accent"><div class="n" id="pStatInicio" style="color:var(--accent)">0</div><div class="l">Etapa inicial</div></div>
-      <div class="stat amarillo"><div class="n" id="pStatIntermedio" style="color:var(--amarillo)">0</div><div class="l">Etapa intermedia</div></div>
-      <div class="stat verde"><div class="n" id="pStatFinal" style="color:var(--verde)">0</div><div class="l">Etapa final</div></div>
+    <div class="stats" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat total"><div class="n" id="pStatActivos">0</div><div class="l">Postulantes</div></div>
       <div class="stat ingresado"><div class="n" id="pStatIngresados" style="color:#a78bfa">0</div><div class="l">Ingresados</div></div>
+      <div class="stat rojo"><div class="n" id="pStatRechazados" style="color:var(--rojo)">0</div><div class="l">Rechazados</div></div>
+    </div>
+
+    <div class="tabnav" id="pSubTabNav" style="display:flex;">
+      <button class="tab-btn active" id="pTabActivosBtn">🧑‍💼 Postulantes</button>
+      <button class="tab-btn" id="pTabIngresadosBtn">✅ Ingresados</button>
+      <button class="tab-btn" id="pTabRechazadosBtn">❌ Rechazados</button>
     </div>
 
     <div class="toolbar">
-      <input type="text" id="pSearchInput" placeholder="Buscar por nombre, DNI o legajo…">
-      <select id="pFilterEstado">
-        <option value="todos">Todas las etapas</option>
-        <option value="inicio">Inicio</option>
-        <option value="intermedio">Intermedio</option>
-        <option value="final">Final</option>
-      </select>
-      <div class="view-toggle">
-        <button class="view-btn active" id="viewKanbanBtn">🗂 Tablero</button>
-        <button class="view-btn" id="viewTablaBtn">📋 Lista</button>
-      </div>
-      <button class="btn btn-ghost" id="exportExcelPostBtn" title="Descargar la lista actual de postulantes (respeta filtros y búsqueda) en Excel">⬇ Excel</button>
-      <button class="btn btn-ghost" id="exportPdfPostBtn" title="Descargar la lista actual de postulantes (respeta filtros y búsqueda) en PDF">⬇ PDF</button>
+      <input type="text" id="pSearchInput" placeholder="Buscar por nombre o DNI…">
+      <button class="btn btn-ghost" id="exportExcelPostBtn" title="Descargar la lista actual (respeta la pestaña y la búsqueda) en Excel">⬇ Excel</button>
+      <button class="btn btn-ghost" id="exportPdfPostBtn" title="Descargar la lista actual (respeta la pestaña y la búsqueda) en PDF">⬇ PDF</button>
       <button class="btn btn-accent" id="addPostulanteBtn">+ Nuevo postulante</button>
     </div>
 
     <div id="postulantesKanban" class="tablewrap">
-      <div class="scrollarea">
-        <table>
-          <thead>
-            <tr>
-              <th>Postulante</th>
-              <th>Entrevista</th>
-              <th>Examen</th>
-              <th>Psicofísico</th>
-              <th>Línea</th>
-              <th>Línea aprobada</th>
-              <th>Manejo</th>
-              <th>Rota</th>
-              <th>Etapa</th>
-              <th style="text-align:right;">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="postulantesResultsTbody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="postulantesTabla" class="tablewrap hidden">
-      <div class="scrollarea">
-        <table>
-          <thead>
-            <tr>
-              <th>Legajo/Ref</th>
-              <th>Nombre</th>
-              <th>DNI</th>
-              <th>Localidad</th>
-              <th>Teléfono</th>
-              <th>Postulación</th>
-              <th>Etapa</th>
-              <th style="text-align:right;">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="postulantesTbody"></tbody>
-        </table>
-      </div>
+      <div class="scrollarea" id="postulantesTableScroll"></div>
     </div>
 
     <div class="footnote" id="pFootnote"></div>
@@ -629,16 +590,7 @@
   <div class="modal modal-lg">
     <h3 id="postulanteModalTitle">Nuevo postulante</h3>
 
-    <div class="field">
-      <label>Etapa actual</label>
-      <select id="pfEstado">
-        <option value="inicio">Inicio</option>
-        <option value="intermedio">Intermedio</option>
-        <option value="final">Final</option>
-      </select>
-    </div>
-
-    <div class="form-section">
+    <div class="form-section" style="border-top:none;margin-top:0;padding-top:0;">
       <div class="form-section-title">📋 Postulación</div>
       <div class="field">
         <label>Nombre completo</label>
@@ -672,6 +624,16 @@
         <div class="field">
           <label>Cómo se enteró</label>
           <input type="text" id="pfComoEntero" placeholder="Recomendado, aviso...">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Vencimiento de licencia</label>
+          <input type="date" id="pfVencimientoLicencia" class="mono-input">
+        </div>
+        <div class="field">
+          <label>Socio</label>
+          <input type="text" id="pfSocio" placeholder="Opcional">
         </div>
       </div>
     </div>
@@ -763,6 +725,19 @@
       <div class="field" id="pfFechaIngresoWrap" style="margin-top:10px;display:none;">
         <label>Fecha de ingreso</label>
         <input type="date" id="pfFechaIngreso" class="mono-input">
+      </div>
+    </div>
+
+    <div class="form-section rechazo-section">
+      <label class="checkbox-chip rechazo-toggle" style="width:100%;justify-content:flex-start;">
+        <input type="checkbox" id="pfRechazado">
+        ❌ Postulante rechazado
+      </label>
+      <div class="field" id="pfRechazoWrap" style="margin-top:10px;display:none;">
+        <label>Fecha de rechazo</label>
+        <input type="date" id="pfFechaRechazo" class="mono-input">
+        <label style="margin-top:10px;">Motivo</label>
+        <textarea id="pfMotivoRechazo" placeholder="Motivo del rechazo..." rows="2"></textarea>
       </div>
     </div>
 
@@ -1001,10 +976,12 @@ async function updatePostulanteDB(p){
     body: JSON.stringify({
       nombre: p.nombre, dni: p.dni, telefono: p.telefono, direccion: p.direccion,
       localidad: p.localidad, fecha_postulacion: p.fecha_postulacion, como_se_entero: p.como_se_entero,
-      estado: p.estado, entrevista_puntaje: p.entrevista_puntaje, examen_puntaje: p.examen_puntaje,
+      vencimiento_licencia: p.vencimiento_licencia, socio: p.socio,
+      entrevista_puntaje: p.entrevista_puntaje, examen_puntaje: p.examen_puntaje,
       psicofisico_resultado: p.psicofisico_resultado, lineas: p.lineas, linea_aprobada: p.linea_aprobada,
       manejo: p.manejo, rota: p.rota, notas: p.notas,
-      ingresado: p.ingresado, fecha_ingreso: p.fecha_ingreso
+      ingresado: p.ingresado, fecha_ingreso: p.fecha_ingreso,
+      rechazado: p.rechazado, fecha_rechazo: p.fecha_rechazo, motivo_rechazo: p.motivo_rechazo
     })
   });
 }
@@ -1105,18 +1082,12 @@ let state = {
   activeTab: 'licencias',
   postulantes: [],
   postulantesLoaded: false,
-  postulanteView: 'kanban',
+  pView: 'activos',
   pSearch: '',
-  pFilter: 'todos',
   postulanteEditingId: null,
   postulanteDeletingId: null
 };
 
-const ETAPAS_POSTULANTE = [
-  { key: 'inicio', label: 'Inicio', color: 'var(--accent)' },
-  { key: 'intermedio', label: 'Intermedio', color: 'var(--amarillo)' },
-  { key: 'final', label: 'Final', color: 'var(--verde)' }
-];
 const LINEAS_DISPONIBLES = ['269', '236', '634', '504', '166'];
 const COLOR_INGRESADO = '#a78bfa';
 
@@ -1355,8 +1326,9 @@ function getExportRowsPostulantes(){
     'DNI': p.dni || '',
     'Teléfono': p.telefono || '',
     'Localidad': p.localidad || '',
+    'Socio': p.socio || '',
     'Postulación': p.fecha_postulacion ? fmtFecha(p.fecha_postulacion) : '',
-    'Etapa': etapaInfo(p.estado).label,
+    'Vto. licencia': p.vencimiento_licencia ? fmtFecha(p.vencimiento_licencia) : '',
     'Entrevista': p.entrevista_puntaje ?? '',
     'Examen': p.examen_puntaje ?? '',
     'Psicofísico': p.psicofisico_resultado || '',
@@ -1366,6 +1338,9 @@ function getExportRowsPostulantes(){
     'Rota': p.rota || '',
     'Ingresado': p.ingresado ? 'Sí' : 'No',
     'Fecha ingreso': p.fecha_ingreso ? fmtFecha(p.fecha_ingreso) : '',
+    'Rechazado': p.rechazado ? 'Sí' : 'No',
+    'Fecha rechazo': p.fecha_rechazo ? fmtFecha(p.fecha_rechazo) : '',
+    'Motivo rechazo': p.motivo_rechazo || '',
     'Notas': p.notas || ''
   }));
 }
@@ -1396,21 +1371,25 @@ function exportarPDFPostulantes(){
   doc.setTextColor(120);
   doc.text(`Generado el ${new Date().toLocaleString('es-AR')} · ${filas.length} postulante(s)`, 14, 21);
 
-  const columnas = ['Nombre', 'DNI', 'Teléfono', 'Localidad', 'Postulación', 'Etapa', 'Entrevista', 'Examen', 'Psicofísico', 'Línea', 'Línea aprobada', 'Manejo', 'Rota', 'Ingresado', 'Fecha ingreso'];
+  const columnas = ['Nombre', 'DNI', 'Teléfono', 'Localidad', 'Socio', 'Postulación', 'Vto. licencia', 'Entrevista', 'Examen', 'Psicofísico', 'Línea', 'Línea aprobada', 'Manejo', 'Rota', 'Ingresado', 'Fecha ingreso', 'Rechazado', 'Fecha rechazo', 'Motivo rechazo'];
 
   doc.autoTable({
     startY: 26,
     head: [columnas],
     body: filas.map(f => columnas.map(c => String(f[c] ?? ''))),
-    styles: { fontSize: 6.5, cellPadding: 1.8, overflow: 'linebreak' },
-    headStyles: { fillColor: [23, 29, 39], textColor: 255, fontSize: 6.5 },
-    columnStyles: { 0: { cellWidth: 32 } },
+    styles: { fontSize: 6, cellPadding: 1.5, overflow: 'linebreak' },
+    headStyles: { fillColor: [23, 29, 39], textColor: 255, fontSize: 6 },
+    columnStyles: { 0: { cellWidth: 26 }, 18: { cellWidth: 30 } },
     didParseCell: (hook) => {
       if(hook.section !== 'body') return;
       const col = columnas[hook.column.index];
       const val = hook.cell.raw;
       if(col === 'Ingresado' && val === 'Sí'){
         hook.cell.styles.textColor = [140, 90, 230];
+        hook.cell.styles.fontStyle = 'bold';
+      }
+      if(col === 'Rechazado' && val === 'Sí'){
+        hook.cell.styles.textColor = [200, 40, 55];
         hook.cell.styles.fontStyle = 'bold';
       }
       if(col === 'Manejo' || col === 'Rota'){
@@ -1882,10 +1861,6 @@ document.getElementById('loginPassword').addEventListener('keydown', (e) => { if
 
 // ===================== POSTULANTES A INGRESO =====================
 
-function etapaInfo(key){
-  return ETAPAS_POSTULANTE.find(e => e.key === key) || ETAPAS_POSTULANTE[0];
-}
-
 function switchTab(tab){
   state.activeTab = tab;
   const isLic = tab === 'licencias';
@@ -1911,8 +1886,26 @@ async function loadPostulantes(){
   renderPostulantes();
 }
 
+// state.pView: 'activos' | 'ingresados' | 'rechazados'
+function switchPView(view){
+  state.pView = view;
+  document.getElementById('pTabActivosBtn').classList.toggle('active', view === 'activos');
+  document.getElementById('pTabIngresadosBtn').classList.toggle('active', view === 'ingresados');
+  document.getElementById('pTabRechazadosBtn').classList.toggle('active', view === 'rechazados');
+  renderPostulantes();
+}
+document.getElementById('pTabActivosBtn').addEventListener('click', () => switchPView('activos'));
+document.getElementById('pTabIngresadosBtn').addEventListener('click', () => switchPView('ingresados'));
+document.getElementById('pTabRechazadosBtn').addEventListener('click', () => switchPView('rechazados'));
+
+function getListaPorVista(view){
+  if(view === 'ingresados') return state.postulantes.filter(p => p.ingresado);
+  if(view === 'rechazados') return state.postulantes.filter(p => p.rechazado);
+  return state.postulantes.filter(p => !p.ingresado && !p.rechazado);
+}
+
 function getFilteredPostulantes(){
-  let list = state.postulantes;
+  let list = getListaPorVista(state.pView);
   if(state.pSearch.trim()){
     const q = state.pSearch.trim().toLowerCase();
     list = list.filter(p =>
@@ -1920,27 +1913,18 @@ function getFilteredPostulantes(){
       (p.dni || '').toLowerCase().includes(q)
     );
   }
-  if(state.pFilter !== 'todos'){
-    list = list.filter(p => p.estado === state.pFilter);
-  }
   return list;
 }
 
 function renderPostulantes(){
-  const list = state.postulantes;
-  document.getElementById('pStatTotal').textContent = list.length;
-  document.getElementById('pStatInicio').textContent = list.filter(p => p.estado === 'inicio').length;
-  document.getElementById('pStatIntermedio').textContent = list.filter(p => p.estado === 'intermedio').length;
-  document.getElementById('pStatFinal').textContent = list.filter(p => p.estado === 'final').length;
-  document.getElementById('pStatIngresados').textContent = list.filter(p => p.ingresado).length;
+  document.getElementById('pStatActivos').textContent = getListaPorVista('activos').length;
+  document.getElementById('pStatIngresados').textContent = getListaPorVista('ingresados').length;
+  document.getElementById('pStatRechazados').textContent = getListaPorVista('rechazados').length;
 
-  if(state.postulanteView === 'kanban'){
-    renderPostulantesKanban();
-  } else {
-    renderPostulantesTabla();
-  }
+  renderTablaPostulantes();
   const filtered = getFilteredPostulantes();
-  document.getElementById('pFootnote').textContent = `Mostrando ${filtered.length} de ${list.length} postulantes`;
+  const total = getListaPorVista(state.pView).length;
+  document.getElementById('pFootnote').textContent = `Mostrando ${filtered.length} de ${total}`;
 }
 
 function claseEstado(valor, ok, warn){
@@ -1954,118 +1938,137 @@ function celdaResultado(valor, clase){
   return `<td class="res-cell ${clase}">${escapeHtml(valor)}</td>`;
 }
 
-function renderPostulantesKanban(){
-  const tbody = document.getElementById('postulantesResultsTbody');
-  const filtered = getFilteredPostulantes();
-
-  if(filtered.length === 0){
-    tbody.innerHTML = `<tr><td colspan="10"><div class="empty"><div class="big">Sin postulantes</div>Probá con otro filtro o búsqueda.</div></td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = filtered.map(p => {
-    const etapa = etapaInfo(p.estado);
-
-    const entrevistaVal = (p.entrevista_puntaje !== null && p.entrevista_puntaje !== undefined && p.entrevista_puntaje !== '')
-      ? String(p.entrevista_puntaje) : '—';
-    const entrevistaClase = entrevistaVal === '—' ? '' : (Number(p.entrevista_puntaje) >= 16 ? 'ok' : 'no');
-
-    const examenVal = (p.examen_puntaje !== null && p.examen_puntaje !== undefined && p.examen_puntaje !== '')
-      ? String(p.examen_puntaje) : '—';
-    const examenClase = examenVal === '—' ? '' : (Number(p.examen_puntaje) >= 15 ? 'ok' : 'no');
-
-    const psicoVal = p.psicofisico_resultado || '—';
-    const psicoClase = claseEstado(p.psicofisico_resultado, 'APTO', 'APTO RELATIVO');
-
-    const lineaVal = (p.lineas && p.lineas.length) ? p.lineas.join(', ') : '—';
-
-    const lineaAprobadaVal = p.linea_aprobada || '—';
-    const lineaAprobadaClase = p.linea_aprobada ? 'ok' : '';
-
-    const manejoVal = p.manejo || '—';
-    const manejoClase = claseEstado(p.manejo, 'SI', 'En trámite');
-
-    const rotaVal = p.rota || '—';
-    const rotaClase = claseEstado(p.rota, 'SI', 'En trámite');
-
-    return `
-      <tr class="${p.ingresado ? 'row-ingresado' : ''}">
-        <td class="cell-nombre" data-label="Postulante">
-          <div class="nombre">${escapeHtml(p.nombre)}${p.ingresado ? ' <span style="color:#a78bfa;">✅</span>' : ''}</div>
-          <div class="kc-meta">${escapeHtml(p.dni || 'sin DNI')}${p.telefono ? ' · ' + escapeHtml(p.telefono) : ''}${p.localidad ? ' · 📍 ' + escapeHtml(p.localidad) : ''}</div>
-        </td>
-        ${celdaResultado(entrevistaVal, entrevistaClase)}
-        ${celdaResultado(examenVal, examenClase)}
-        ${celdaResultado(psicoVal, psicoClase)}
-        ${celdaResultado(lineaVal, '')}
-        ${celdaResultado(lineaAprobadaVal, lineaAprobadaClase)}
-        ${celdaResultado(manejoVal, manejoClase)}
-        ${celdaResultado(rotaVal, rotaClase)}
-        <td data-label="Etapa"><span class="pill" style="background:color-mix(in srgb, ${etapa.color} 15%, transparent);color:${etapa.color};"><span class="d" style="background:${etapa.color};"></span>${escapeHtml(etapa.label)}</span></td>
-        <td class="cell-actions">
-          <div class="actions">
-            <button class="icon-btn edit" title="Editar" data-id="${p.id}">✎</button>
-            <button class="icon-btn del" title="Eliminar" data-id="${p.id}">✕</button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
-
-  tbody.querySelectorAll('.icon-btn.edit').forEach(b => b.addEventListener('click', () => openPostulanteModal(b.dataset.id)));
-  tbody.querySelectorAll('.icon-btn.del').forEach(b => b.addEventListener('click', () => openPostulanteConfirmDelete(b.dataset.id)));
+function celdaVencimiento(fecha){
+  if(!fecha) return `<td class="res-cell" data-label="Vto. licencia">—</td>`;
+  const est = estadoDe(fecha);
+  const color = est === 'rojo' ? 'var(--rojo)' : est === 'amarillo' ? 'var(--amarillo)' : 'var(--verde)';
+  return `<td data-label="Vto. licencia"><span class="pill" style="background:color-mix(in srgb, ${color} 15%, transparent);color:${color};"><span class="d" style="background:${color};"></span>${fmtFecha(fecha)}</span></td>`;
 }
 
-function renderPostulantesTabla(){
-  const tbody = document.getElementById('postulantesTbody');
-  const filtered = getFilteredPostulantes();
-  if(filtered.length === 0){
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="big">Sin postulantes</div>Probá con otro filtro o búsqueda.</div></td></tr>`;
-    return;
-  }
-  tbody.innerHTML = filtered.map(p => {
-    const etapa = etapaInfo(p.estado);
-    return `
-      <tr data-id="${p.id}" class="${p.ingresado ? 'row-ingresado' : ''}">
-        <td class="legajo" data-label="Ref">${p.id.slice(-6)}</td>
-        <td class="nombre cell-nombre" data-label="Nombre">${escapeHtml(p.nombre)}${p.ingresado ? ' <span style="color:#a78bfa;">✅</span>' : ''}</td>
-        <td class="cuil" data-label="DNI">${escapeHtml(p.dni || '—')}</td>
-        <td class="cuil" data-label="Localidad">${escapeHtml(p.localidad || '—')}</td>
-        <td class="cuil" data-label="Teléfono">${escapeHtml(p.telefono || '—')}</td>
-        <td class="fecha" data-label="Postulación">${p.fecha_postulacion ? fmtFecha(p.fecha_postulacion) : '—'}</td>
-        <td data-label="Etapa"><span class="pill" style="background:color-mix(in srgb, ${etapa.color} 15%, transparent);color:${etapa.color};"><span class="d" style="background:${etapa.color};"></span>${escapeHtml(etapa.label)}</span></td>
-        <td class="cell-actions">
-          <div class="actions">
-            <button class="icon-btn edit" title="Editar" data-id="${p.id}">✎</button>
-            <button class="icon-btn del" title="Eliminar" data-id="${p.id}">✕</button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
-  tbody.querySelectorAll('.icon-btn.edit').forEach(b => b.addEventListener('click', () => openPostulanteModal(b.dataset.id)));
-  tbody.querySelectorAll('.icon-btn.del').forEach(b => b.addEventListener('click', () => openPostulanteConfirmDelete(b.dataset.id)));
+function nombreConMeta(p){
+  return `
+    <div class="nombre">${escapeHtml(p.nombre)}</div>
+    <div class="kc-meta">${escapeHtml(p.dni || 'sin DNI')}${p.telefono ? ' · ' + escapeHtml(p.telefono) : ''}${p.localidad ? ' · 📍 ' + escapeHtml(p.localidad) : ''}</div>
+  `;
 }
 
-document.getElementById('viewKanbanBtn').addEventListener('click', () => {
-  state.postulanteView = 'kanban';
-  document.getElementById('viewKanbanBtn').classList.add('active');
-  document.getElementById('viewTablaBtn').classList.remove('active');
-  document.getElementById('postulantesKanban').classList.remove('hidden');
-  document.getElementById('postulantesTabla').classList.add('hidden');
+function accionesRow(p, extra){
+  return `
+    <td class="cell-actions">
+      <div class="actions">
+        ${extra || ''}
+        <button class="icon-btn edit" title="Editar" data-id="${p.id}">✎</button>
+        <button class="icon-btn del" title="Eliminar" data-id="${p.id}">✕</button>
+      </div>
+    </td>
+  `;
+}
+
+function renderTablaPostulantes(){
+  const cont = document.getElementById('postulantesTableScroll');
+  const filtered = getFilteredPostulantes();
+
+  let theadHtml, filasHtml, colspan;
+
+  if(state.pView === 'activos'){
+    colspan = 9;
+    theadHtml = `<tr>
+      <th>Postulante</th><th>Socio</th><th>Vto. licencia</th><th>Entrevista</th><th>Examen</th>
+      <th>Psicofísico</th><th>Línea</th><th>Línea aprobada</th><th>Manejo</th><th>Rota</th>
+      <th style="text-align:right;">Acciones</th>
+    </tr>`;
+    filasHtml = filtered.map(p => {
+      const entrevistaVal = (p.entrevista_puntaje !== null && p.entrevista_puntaje !== undefined && p.entrevista_puntaje !== '') ? String(p.entrevista_puntaje) : '—';
+      const entrevistaClase = entrevistaVal === '—' ? '' : (Number(p.entrevista_puntaje) >= 16 ? 'ok' : 'no');
+      const examenVal = (p.examen_puntaje !== null && p.examen_puntaje !== undefined && p.examen_puntaje !== '') ? String(p.examen_puntaje) : '—';
+      const examenClase = examenVal === '—' ? '' : (Number(p.examen_puntaje) >= 15 ? 'ok' : 'no');
+      const psicoVal = p.psicofisico_resultado || '—';
+      const psicoClase = claseEstado(p.psicofisico_resultado, 'APTO', 'APTO RELATIVO');
+      const lineaVal = (p.lineas && p.lineas.length) ? p.lineas.join(', ') : '—';
+      const lineaAprobadaVal = p.linea_aprobada || '—';
+      const lineaAprobadaClase = p.linea_aprobada ? 'ok' : '';
+      const manejoVal = p.manejo || '—';
+      const manejoClase = claseEstado(p.manejo, 'SI', 'En trámite');
+      const rotaVal = p.rota || '—';
+      const rotaClase = claseEstado(p.rota, 'SI', 'En trámite');
+      return `
+        <tr>
+          <td class="cell-nombre" data-label="Postulante">${nombreConMeta(p)}</td>
+          <td class="res-cell" data-label="Socio">${p.socio ? escapeHtml(p.socio) : '—'}</td>
+          ${celdaVencimiento(p.vencimiento_licencia)}
+          ${celdaResultado(entrevistaVal, entrevistaClase)}
+          ${celdaResultado(examenVal, examenClase)}
+          ${celdaResultado(psicoVal, psicoClase)}
+          ${celdaResultado(lineaVal, '')}
+          ${celdaResultado(lineaAprobadaVal, lineaAprobadaClase)}
+          ${celdaResultado(manejoVal, manejoClase)}
+          ${celdaResultado(rotaVal, rotaClase)}
+          ${accionesRow(p)}
+        </tr>
+      `;
+    }).join('');
+
+  } else if(state.pView === 'ingresados'){
+    colspan = 6;
+    theadHtml = `<tr>
+      <th>Postulante</th><th>Socio</th><th>Vto. licencia</th><th>Línea aprobada</th><th>Fecha de ingreso</th>
+      <th style="text-align:right;">Acciones</th>
+    </tr>`;
+    filasHtml = filtered.map(p => `
+      <tr class="row-ingresado">
+        <td class="cell-nombre" data-label="Postulante">${nombreConMeta(p)}</td>
+        <td class="res-cell" data-label="Socio">${p.socio ? escapeHtml(p.socio) : '—'}</td>
+        ${celdaVencimiento(p.vencimiento_licencia)}
+        <td class="res-cell ok" data-label="Línea aprobada">${p.linea_aprobada ? escapeHtml(p.linea_aprobada) : '—'}</td>
+        <td class="fecha" data-label="Fecha de ingreso">${p.fecha_ingreso ? fmtFecha(p.fecha_ingreso) : '—'}</td>
+        ${accionesRow(p, `<button class="icon-btn volver" title="Volver a postulantes" data-id="${p.id}">↩</button>`)}
+      </tr>
+    `).join('');
+
+  } else {
+    colspan = 5;
+    theadHtml = `<tr>
+      <th>Postulante</th><th>Fecha de rechazo</th><th>Motivo</th>
+      <th style="text-align:right;">Acciones</th>
+    </tr>`;
+    filasHtml = filtered.map(p => `
+      <tr>
+        <td class="cell-nombre" data-label="Postulante">${nombreConMeta(p)}</td>
+        <td class="fecha" data-label="Fecha de rechazo">${p.fecha_rechazo ? fmtFecha(p.fecha_rechazo) : '—'}</td>
+        <td class="res-cell" style="text-align:left;white-space:normal;" data-label="Motivo">${p.motivo_rechazo ? escapeHtml(p.motivo_rechazo) : '—'}</td>
+        ${accionesRow(p, `<button class="icon-btn volver" title="Volver a postulantes" data-id="${p.id}">↩</button>`)}
+      </tr>
+    `).join('');
+  }
+
+  if(filtered.length === 0){
+    filasHtml = `<tr><td colspan="${colspan}"><div class="empty"><div class="big">Sin resultados</div>Probá con otra búsqueda.</div></td></tr>`;
+  }
+
+  cont.innerHTML = `<table><thead>${theadHtml}</thead><tbody>${filasHtml}</tbody></table>`;
+
+  cont.querySelectorAll('.icon-btn.edit').forEach(b => b.addEventListener('click', () => openPostulanteModal(b.dataset.id)));
+  cont.querySelectorAll('.icon-btn.del').forEach(b => b.addEventListener('click', () => openPostulanteConfirmDelete(b.dataset.id)));
+  cont.querySelectorAll('.icon-btn.volver').forEach(b => b.addEventListener('click', () => volverAPostulante(b.dataset.id)));
+}
+
+async function volverAPostulante(id){
+  const p = state.postulantes.find(x => x.id === id);
+  if(!p) return;
+  const anterior = { ingresado: p.ingresado, fecha_ingreso: p.fecha_ingreso, rechazado: p.rechazado, fecha_rechazo: p.fecha_rechazo, motivo_rechazo: p.motivo_rechazo };
+  p.ingresado = false; p.fecha_ingreso = null;
+  p.rechazado = false; p.fecha_rechazo = null; p.motivo_rechazo = null;
   renderPostulantes();
-});
-document.getElementById('viewTablaBtn').addEventListener('click', () => {
-  state.postulanteView = 'tabla';
-  document.getElementById('viewTablaBtn').classList.add('active');
-  document.getElementById('viewKanbanBtn').classList.remove('active');
-  document.getElementById('postulantesTabla').classList.remove('hidden');
-  document.getElementById('postulantesKanban').classList.add('hidden');
-  renderPostulantes();
-});
+  try{
+    await updatePostulanteDB(p);
+  }catch(e){
+    console.error('Error volviendo a postulantes:', e);
+    Object.assign(p, anterior);
+    renderPostulantes();
+  }
+}
 
 document.getElementById('pSearchInput').addEventListener('input', (e) => { state.pSearch = e.target.value; renderPostulantes(); });
-document.getElementById('pFilterEstado').addEventListener('change', (e) => { state.pFilter = e.target.value; renderPostulantes(); });
 
 // --- Modal de alta/edición de postulante ---
 function renderLineasCheckboxes(seleccionadas){
@@ -2106,7 +2109,8 @@ function openPostulanteModal(id){
     document.getElementById('pfLocalidad').value = p.localidad || '';
     document.getElementById('pfFecha').value = p.fecha_postulacion || '';
     document.getElementById('pfComoEntero').value = p.como_se_entero || '';
-    document.getElementById('pfEstado').value = p.estado || 'inicio';
+    document.getElementById('pfVencimientoLicencia').value = p.vencimiento_licencia || '';
+    document.getElementById('pfSocio').value = p.socio || '';
     document.getElementById('pfEntrevistaPuntaje').value = p.entrevista_puntaje ?? '';
     document.getElementById('pfExamenPuntaje').value = p.examen_puntaje ?? '';
     document.getElementById('pfPsicofisico').value = p.psicofisico_resultado || '';
@@ -2116,6 +2120,9 @@ function openPostulanteModal(id){
     document.getElementById('pfNotas').value = p.notas || '';
     document.getElementById('pfIngresado').checked = !!p.ingresado;
     document.getElementById('pfFechaIngreso').value = p.fecha_ingreso || '';
+    document.getElementById('pfRechazado').checked = !!p.rechazado;
+    document.getElementById('pfFechaRechazo').value = p.fecha_rechazo || '';
+    document.getElementById('pfMotivoRechazo').value = p.motivo_rechazo || '';
     renderLineasCheckboxes(p.lineas);
   } else {
     document.getElementById('postulanteModalTitle').textContent = 'Nuevo postulante';
@@ -2126,7 +2133,8 @@ function openPostulanteModal(id){
     document.getElementById('pfLocalidad').value = '';
     document.getElementById('pfFecha').value = new Date().toISOString().slice(0, 10);
     document.getElementById('pfComoEntero').value = '';
-    document.getElementById('pfEstado').value = 'inicio';
+    document.getElementById('pfVencimientoLicencia').value = '';
+    document.getElementById('pfSocio').value = '';
     document.getElementById('pfEntrevistaPuntaje').value = '';
     document.getElementById('pfExamenPuntaje').value = '';
     document.getElementById('pfPsicofisico').value = '';
@@ -2136,11 +2144,15 @@ function openPostulanteModal(id){
     document.getElementById('pfNotas').value = '';
     document.getElementById('pfIngresado').checked = false;
     document.getElementById('pfFechaIngreso').value = '';
+    document.getElementById('pfRechazado').checked = false;
+    document.getElementById('pfFechaRechazo').value = '';
+    document.getElementById('pfMotivoRechazo').value = '';
     renderLineasCheckboxes([]);
   }
   actualizarHintAprobacion('pfEntrevistaPuntaje', 'pfEntrevistaHint', 16);
   actualizarHintAprobacion('pfExamenPuntaje', 'pfExamenHint', 15);
   toggleFechaIngresoVisibility();
+  toggleRechazoVisibility();
   document.getElementById('postulanteOverlay').classList.add('show');
   document.getElementById('pfNombre').focus();
 }
@@ -2152,7 +2164,25 @@ function toggleFechaIngresoVisibility(){
     document.getElementById('pfFechaIngreso').value = new Date().toISOString().slice(0, 10);
   }
 }
-document.getElementById('pfIngresado').addEventListener('change', toggleFechaIngresoVisibility);
+function toggleRechazoVisibility(){
+  const checked = document.getElementById('pfRechazado').checked;
+  const wrap = document.getElementById('pfRechazoWrap');
+  wrap.style.display = checked ? 'block' : 'none';
+  if(checked && !document.getElementById('pfFechaRechazo').value){
+    document.getElementById('pfFechaRechazo').value = new Date().toISOString().slice(0, 10);
+  }
+}
+// Ingresado y Rechazado son mutuamente excluyentes: tildar uno destilda el otro.
+document.getElementById('pfIngresado').addEventListener('change', (e) => {
+  if(e.target.checked) document.getElementById('pfRechazado').checked = false;
+  toggleFechaIngresoVisibility();
+  toggleRechazoVisibility();
+});
+document.getElementById('pfRechazado').addEventListener('change', (e) => {
+  if(e.target.checked) document.getElementById('pfIngresado').checked = false;
+  toggleFechaIngresoVisibility();
+  toggleRechazoVisibility();
+});
 function closePostulanteModal(){
   document.getElementById('postulanteOverlay').classList.remove('show');
   state.postulanteEditingId = null;
@@ -2165,6 +2195,8 @@ async function savePostulante(){
   }
   const entrevistaVal = document.getElementById('pfEntrevistaPuntaje').value;
   const examenVal = document.getElementById('pfExamenPuntaje').value;
+  const ingresado = document.getElementById('pfIngresado').checked;
+  const rechazado = document.getElementById('pfRechazado').checked;
   const datos = {
     nombre: nombre.toUpperCase(),
     dni: document.getElementById('pfDni').value.trim(),
@@ -2173,7 +2205,8 @@ async function savePostulante(){
     localidad: document.getElementById('pfLocalidad').value.trim(),
     fecha_postulacion: document.getElementById('pfFecha').value || new Date().toISOString().slice(0, 10),
     como_se_entero: document.getElementById('pfComoEntero').value.trim(),
-    estado: document.getElementById('pfEstado').value,
+    vencimiento_licencia: document.getElementById('pfVencimientoLicencia').value || null,
+    socio: document.getElementById('pfSocio').value.trim(),
     entrevista_puntaje: entrevistaVal === '' ? null : Number(entrevistaVal),
     examen_puntaje: examenVal === '' ? null : Number(examenVal),
     psicofisico_resultado: document.getElementById('pfPsicofisico').value || null,
@@ -2182,8 +2215,11 @@ async function savePostulante(){
     manejo: document.getElementById('pfManejo').value || null,
     rota: document.getElementById('pfRota').value || null,
     notas: document.getElementById('pfNotas').value.trim(),
-    ingresado: document.getElementById('pfIngresado').checked,
-    fecha_ingreso: document.getElementById('pfIngresado').checked ? (document.getElementById('pfFechaIngreso').value || null) : null
+    ingresado: ingresado,
+    fecha_ingreso: ingresado ? (document.getElementById('pfFechaIngreso').value || null) : null,
+    rechazado: rechazado,
+    fecha_rechazo: rechazado ? (document.getElementById('pfFechaRechazo').value || null) : null,
+    motivo_rechazo: rechazado ? document.getElementById('pfMotivoRechazo').value.trim() : null
   };
   const btn = document.getElementById('postulanteSaveBtn');
   btn.disabled = true;
