@@ -506,6 +506,7 @@
             <th data-sort="vencimiento">Vencimiento <span class="arrow"></span></th>
             <th data-sort="dias">Días</th>
             <th data-sort="estado">Estado</th>
+            <th data-sort="cabecera">Cabecera</th>
             <th style="text-align:right;">Acciones</th>
           </tr>
         </thead>
@@ -566,6 +567,14 @@
     <div class="field">
       <label>Vencimiento de licencia</label>
       <input type="date" id="fVencimiento" class="mono-input">
+    </div>
+    <div class="field">
+      <label>Cabecera</label>
+      <select id="fCabecera">
+        <option value="">— Sin definir —</option>
+        <option value="269">269</option>
+        <option value="OBN">OBN</option>
+      </select>
       <div class="field-error" id="fError">Completá todos los campos.</div>
     </div>
     <div class="modal-actions">
@@ -945,7 +954,7 @@ async function insertEmpleadoDB(emp){
 async function updateEmpleadoDB(emp){
   return await sbFetch(`empleados?id=eq.${encodeURIComponent(emp.id)}`, {
     method: 'PATCH',
-    body: JSON.stringify({ legajo: emp.legajo, nombre: emp.nombre, cuil: emp.cuil, vencimiento: emp.vencimiento, actualizado_en: new Date().toISOString() })
+    body: JSON.stringify({ legajo: emp.legajo, nombre: emp.nombre, cuil: emp.cuil, vencimiento: emp.vencimiento, cabecera: emp.cabecera, actualizado_en: new Date().toISOString() })
   });
 }
 async function deleteEmpleadoDB(id){
@@ -1109,7 +1118,7 @@ async function loadData(silent){
       await bulkInsertEmpleadosDB(seedRows);
       rows = await fetchEmpleadosDB();
     }
-    state.empleados = rows.map(r => ({ id: r.id, legajo: r.legajo, nombre: r.nombre, cuil: r.cuil, vencimiento: r.vencimiento, foto_path: r.foto_path || null }));
+    state.empleados = rows.map(r => ({ id: r.id, legajo: r.legajo, nombre: r.nombre, cuil: r.cuil, vencimiento: r.vencimiento, cabecera: r.cabecera || null, foto_path: r.foto_path || null }));
     state.storageOk = true;
     hideBanner();
     markSaved();
@@ -1263,7 +1272,8 @@ function getExportRows(){
     CUIL: e.cuil,
     Vencimiento: fmtFecha(e.vencimiento),
     Días: e.dias,
-    Estado: estadoLabel(e.estado)
+    Estado: estadoLabel(e.estado),
+    Cabecera: e.cabecera || ''
   }));
 }
 function nombreArchivoExport(ext){
@@ -1295,8 +1305,8 @@ function exportarPDF(){
 
   doc.autoTable({
     startY: 26,
-    head: [['Legajo', 'Apellido y Nombre', 'CUIL', 'Vencimiento', 'Días', 'Estado']],
-    body: filas.map(f => [f.Legajo, f['Apellido y Nombre'], f.CUIL, f.Vencimiento, f['Días'], f.Estado]),
+    head: [['Legajo', 'Apellido y Nombre', 'CUIL', 'Vencimiento', 'Días', 'Estado', 'Cabecera']],
+    body: filas.map(f => [f.Legajo, f['Apellido y Nombre'], f.CUIL, f.Vencimiento, f['Días'], f.Estado, f.Cabecera]),
     styles: { fontSize: 8, cellPadding: 2.5 },
     headStyles: { fillColor: [23, 29, 39], textColor: 255 },
     didParseCell: (hook) => {
@@ -1436,6 +1446,7 @@ function render(){
         <td class="fecha" data-label="Vencimiento">${fmtFecha(e.vencimiento)}</td>
         <td class="dias" data-label="Días">${e.dias >= 0 ? e.dias + 'd' : e.dias + 'd'}</td>
         <td data-label="Estado"><span class="pill ${e.estado}"><span class="d"></span>${estadoLabel(e.estado)}</span></td>
+        <td class="cuil" data-label="Cabecera">${e.cabecera ? escapeHtml(e.cabecera) : '—'}</td>
         <td class="cell-actions">
           <div class="actions">
             <button class="icon-btn photo ${e.foto_path ? 'has-photo' : ''}" title="${e.foto_path ? 'Ver foto de licencia' : 'Sin foto cargada'}" data-id="${e.id}">📷</button>
@@ -1723,12 +1734,14 @@ function openModal(id){
     document.getElementById('fNombre').value = emp.nombre;
     document.getElementById('fCuil').value = emp.cuil;
     document.getElementById('fVencimiento').value = emp.vencimiento;
+    document.getElementById('fCabecera').value = emp.cabecera || '';
   } else {
     document.getElementById('modalTitle').textContent = 'Nuevo empleado';
     document.getElementById('fLegajo').value = '';
     document.getElementById('fNombre').value = '';
     document.getElementById('fCuil').value = '';
     document.getElementById('fVencimiento').value = '';
+    document.getElementById('fCabecera').value = '';
   }
   overlay.classList.add('show');
   document.getElementById('fLegajo').focus();
@@ -1743,6 +1756,7 @@ async function saveModal(){
   const nombre = document.getElementById('fNombre').value.trim();
   const cuil = document.getElementById('fCuil').value.trim();
   const vencimiento = document.getElementById('fVencimiento').value;
+  const cabecera = document.getElementById('fCabecera').value || null;
   if(!legajo || !nombre || !cuil || !vencimiento){
     document.getElementById('fError').style.display = 'block';
     return;
@@ -1750,11 +1764,11 @@ async function saveModal(){
   document.getElementById('saveBtn').disabled = true;
   if(state.editingId){
     const emp = state.empleados.find(e => e.id === state.editingId);
-    const updated = { ...emp, legajo, nombre: nombre.toUpperCase(), cuil, vencimiento };
+    const updated = { ...emp, legajo, nombre: nombre.toUpperCase(), cuil, vencimiento, cabecera };
     const ok = await editarEmpleado(updated);
     if(ok) Object.assign(emp, updated);
   } else {
-    const nuevo = { id: uid(), legajo, nombre: nombre.toUpperCase(), cuil, vencimiento };
+    const nuevo = { id: uid(), legajo, nombre: nombre.toUpperCase(), cuil, vencimiento, cabecera };
     const ok = await crearEmpleado(nuevo);
     if(ok) state.empleados.push(nuevo);
   }
