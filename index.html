@@ -478,12 +478,17 @@
   </div>
 
   <div class="toolbar">
-    <input type="text" id="searchInput" placeholder="Buscar por nombre o legajo…">
+    <input type="text" id="searchInput" placeholder="Buscar por cualquier dato: nombre, legajo, CUIL, fecha, estado, cabecera…">
     <select id="filterSelect">
       <option value="todos">Todos los estados</option>
       <option value="verde">Vigentes</option>
       <option value="amarillo">Por vencer</option>
       <option value="rojo">Vencidas</option>
+    </select>
+    <select id="filterCabeceraSelect">
+      <option value="todos">Todas las cabeceras</option>
+      <option value="269">269</option>
+      <option value="OBN">OBN</option>
     </select>
     <div class="thresh">Aviso previo <input type="number" id="thresholdInput" min="1" max="365" value="30"> días</div>
     <button class="btn btn-ghost" id="refreshBtn" title="Traer los últimos cambios de otras computadoras">⟳ Actualizar</button>
@@ -1084,6 +1089,7 @@ let state = {
   sortDir: 'asc',
   search: '',
   filter: 'todos',
+  filterCabecera: 'todos',
   editingId: null,
   deletingId: null,
   storageOk: true,
@@ -1246,10 +1252,21 @@ function getFiltered(){
   let list = state.empleados.map(e => ({...e, estado: estadoDe(e.vencimiento), dias: diasRestantes(e.vencimiento)}));
   if(state.search.trim()){
     const q = state.search.trim().toLowerCase();
-    list = list.filter(e => e.nombre.toLowerCase().includes(q) || String(e.legajo).toLowerCase().includes(q));
+    list = list.filter(e =>
+      String(e.legajo).toLowerCase().includes(q) ||
+      e.nombre.toLowerCase().includes(q) ||
+      (e.cuil || '').toLowerCase().includes(q) ||
+      fmtFecha(e.vencimiento).toLowerCase().includes(q) ||
+      String(e.dias).includes(q) ||
+      estadoLabel(e.estado).toLowerCase().includes(q) ||
+      (e.cabecera || '').toLowerCase().includes(q)
+    );
   }
   if(state.filter !== 'todos'){
     list = list.filter(e => e.estado === state.filter);
+  }
+  if(state.filterCabecera && state.filterCabecera !== 'todos'){
+    list = list.filter(e => (e.cabecera || '') === state.filterCabecera);
   }
   list.sort((a,b) => {
     let va = a[state.sortBy], vb = b[state.sortBy];
@@ -1800,6 +1817,7 @@ document.getElementById('confirmOverlay').addEventListener('keydown', (e) => {
 
 document.getElementById('searchInput').addEventListener('input', (e) => { state.search = e.target.value; render(); });
 document.getElementById('filterSelect').addEventListener('change', (e) => { state.filter = e.target.value; render(); });
+document.getElementById('filterCabeceraSelect').addEventListener('change', (e) => { state.filterCabecera = e.target.value; render(); });
 document.getElementById('thresholdInput').addEventListener('change', (e) => {
   let v = parseInt(e.target.value, 10);
   if(isNaN(v) || v < 1) v = 30;
