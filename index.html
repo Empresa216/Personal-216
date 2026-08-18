@@ -25,8 +25,31 @@
     --accent: #4d8dff;
     --accent-bg: rgba(77,141,255,0.14);
   }
+  body.light{
+    --bg: #f3f5f8;
+    --panel: #ffffff;
+    --panel-2: #eef1f5;
+    --border: #dde3ea;
+    --text: #1a2029;
+    --text-muted: #5b6472;
+    --text-dim: #8c96a3;
+    --verde: #1a9d63;
+    --verde-bg: rgba(26,157,99,0.10);
+    --amarillo: #b8720c;
+    --amarillo-bg: rgba(184,114,12,0.12);
+    --rojo: #d6334a;
+    --rojo-bg: rgba(214,51,74,0.10);
+    --accent: #3568d4;
+    --accent-bg: rgba(53,104,212,0.10);
+  }
+  body.light .login-card .logo-wrap img,
+  body.light .headerbar .logo{
+    filter:drop-shadow(0 2px 6px rgba(0,0,0,0.12));
+  }
+  body.light ::selection{background:var(--accent-bg);}
+  body.light .overlay{background:rgba(20,24,32,0.45);}
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;transition:background .2s,color .2s;}
   ::selection{background:var(--accent-bg);}
   .mono{font-family:'JetBrains Mono',monospace;}
   .display{font-family:'Space Grotesk',sans-serif;}
@@ -420,6 +443,15 @@
 </style>
 </head>
 <body>
+<script>
+  // Aplica el tema guardado ANTES de pintar la página, para que no
+  // se vea un parpadeo del tema incorrecto al cargar.
+  try{
+    if(localStorage.getItem('control_licencias_216_theme') === 'light'){
+      document.body.classList.add('light');
+    }
+  }catch(e){}
+</script>
 
 <div id="loginScreen">
   <div class="login-card">
@@ -450,6 +482,7 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:16px;">
+      <button id="themeToggleBtn" class="btn btn-ghost" style="padding:8px 12px;" title="Cambiar entre modo oscuro y claro">🌙</button>
       <div class="save-indicator" id="saveIndicator"><span class="pulse"></span><span id="saveText">Sincronizado</span></div>
       <div class="user-badge">
         <span class="who" id="userEmail"></span>
@@ -2017,6 +2050,23 @@ setInterval(() => {
 }, 20000);
 
 document.getElementById('logoutBtn').addEventListener('click', authLogout);
+
+// --- Modo claro / oscuro ---
+const THEME_KEY = 'control_licencias_216_theme';
+function aplicarTema(tema){
+  document.body.classList.toggle('light', tema === 'light');
+  document.getElementById('themeToggleBtn').textContent = tema === 'light' ? '☀️' : '🌙';
+}
+function cargarTemaGuardado(){
+  const guardado = localStorage.getItem(THEME_KEY);
+  aplicarTema(guardado === 'light' ? 'light' : 'dark');
+}
+document.getElementById('themeToggleBtn').addEventListener('click', () => {
+  const nuevoTema = document.body.classList.contains('light') ? 'dark' : 'light';
+  localStorage.setItem(THEME_KEY, nuevoTema);
+  aplicarTema(nuevoTema);
+});
+cargarTemaGuardado();
 
 async function attemptLogin(){
   const email = document.getElementById('loginEmail').value.trim();
