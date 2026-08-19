@@ -493,7 +493,7 @@
 
   <div class="tabnav" id="tabNav" style="display:flex;">
     <button class="tab-btn active" id="tabLicenciasBtn">🪪 Control de Licencias</button>
-    <button class="tab-btn" id="tabLibretasBtn">📓 Control Libretas</button>
+    <button class="tab-btn" id="tabLibretasBtn" style="display:none;">📓 Control Libretas</button>
     <button class="tab-btn" id="tabPostulantesBtn" style="display:none;">🧑‍💼 Postulantes a Ingreso</button>
   </div>
 
@@ -1094,6 +1094,7 @@ function showApp(){
   document.getElementById('bulkPhotoBtn').style.display = state.canManagePhotos ? 'inline-flex' : 'none';
   document.getElementById('historialBtn').style.display = state.canManagePhotos ? 'inline-flex' : 'none';
   document.getElementById('tabPostulantesBtn').style.display = state.canManagePhotos ? 'inline-block' : 'none';
+  document.getElementById('tabLibretasBtn').style.display = state.canManagePhotos ? 'inline-block' : 'none';
 }
 
 async function sbFetch(path, options = {}){
