@@ -543,7 +543,7 @@
             <th data-sort="nombre">Apellido y Nombre <span class="arrow"></span></th>
             <th data-sort="cuil">CUIL <span class="arrow"></span></th>
             <th data-sort="vencimiento">Vencimiento <span class="arrow"></span></th>
-            <th data-sort="dias">Días</th>
+            <th data-sort="rota">Rota</th>
             <th data-sort="estado">Estado</th>
             <th data-sort="cabecera">Cabecera</th>
             <th style="text-align:right;">Acciones</th>
@@ -670,6 +670,15 @@
         <option value="">— Sin definir —</option>
         <option value="269">269</option>
         <option value="OBN">OBN</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Rota</label>
+      <select id="fRota">
+        <option value="">— Sin definir —</option>
+        <option value="Vigente">Vigente</option>
+        <option value="En trámite">En trámite</option>
+        <option value="Vencida">Vencida</option>
       </select>
       <div class="field-error" id="fError">Completá todos los campos.</div>
     </div>
@@ -1132,7 +1141,7 @@ async function insertEmpleadoDB(emp){
 async function updateEmpleadoDB(emp){
   return await sbFetch(`empleados?id=eq.${encodeURIComponent(emp.id)}`, {
     method: 'PATCH',
-    body: JSON.stringify({ legajo: emp.legajo, nombre: emp.nombre, cuil: emp.cuil, vencimiento: emp.vencimiento, cabecera: emp.cabecera, actualizado_en: new Date().toISOString() })
+    body: JSON.stringify({ legajo: emp.legajo, nombre: emp.nombre, cuil: emp.cuil, vencimiento: emp.vencimiento, cabecera: emp.cabecera, rota: emp.rota, actualizado_en: new Date().toISOString() })
   });
 }
 async function deleteEmpleadoDB(id){
@@ -1307,7 +1316,7 @@ async function loadData(silent){
       await bulkInsertEmpleadosDB(seedRows);
       rows = await fetchEmpleadosDB();
     }
-    state.empleados = rows.map(r => ({ id: r.id, legajo: r.legajo, nombre: r.nombre, cuil: r.cuil, vencimiento: r.vencimiento, cabecera: r.cabecera || null, foto_path: r.foto_path || null }));
+    state.empleados = rows.map(r => ({ id: r.id, legajo: r.legajo, nombre: r.nombre, cuil: r.cuil, vencimiento: r.vencimiento, cabecera: r.cabecera || null, rota: r.rota || null, foto_path: r.foto_path || null }));
     state.storageOk = true;
     hideBanner();
     markSaved();
@@ -1431,6 +1440,12 @@ function fmtFecha(str){
 function estadoLabel(e){
   return e === 'verde' ? 'Vigente' : e === 'amarillo' ? 'Por vencer' : 'Vencida';
 }
+function rotaClase(valor){
+  if(valor === 'Vigente') return 'verde';
+  if(valor === 'En trámite') return 'amarillo';
+  if(valor === 'Vencida') return 'rojo';
+  return '';
+}
 
 function getFiltered(){
   let list = state.empleados.map(e => ({...e, estado: estadoDe(e.vencimiento), dias: diasRestantes(e.vencimiento)}));
@@ -1441,7 +1456,7 @@ function getFiltered(){
       e.nombre.toLowerCase().includes(q) ||
       (e.cuil || '').toLowerCase().includes(q) ||
       fmtFecha(e.vencimiento).toLowerCase().includes(q) ||
-      String(e.dias).includes(q) ||
+      (e.rota || '').toLowerCase().includes(q) ||
       estadoLabel(e.estado).toLowerCase().includes(q) ||
       (e.cabecera || '').toLowerCase().includes(q)
     );
@@ -1472,7 +1487,7 @@ function getExportRows(){
     'Apellido y Nombre': e.nombre,
     CUIL: e.cuil,
     Vencimiento: fmtFecha(e.vencimiento),
-    Días: e.dias,
+    Rota: e.rota || '',
     Estado: estadoLabel(e.estado),
     Cabecera: e.cabecera || ''
   }));
@@ -1506,11 +1521,18 @@ function exportarPDF(){
 
   doc.autoTable({
     startY: 26,
-    head: [['Legajo', 'Apellido y Nombre', 'CUIL', 'Vencimiento', 'Días', 'Estado', 'Cabecera']],
-    body: filas.map(f => [f.Legajo, f['Apellido y Nombre'], f.CUIL, f.Vencimiento, f['Días'], f.Estado, f.Cabecera]),
+    head: [['Legajo', 'Apellido y Nombre', 'CUIL', 'Vencimiento', 'Rota', 'Estado', 'Cabecera']],
+    body: filas.map(f => [f.Legajo, f['Apellido y Nombre'], f.CUIL, f.Vencimiento, f.Rota, f.Estado, f.Cabecera]),
     styles: { fontSize: 8, cellPadding: 2.5 },
     headStyles: { fillColor: [23, 29, 39], textColor: 255 },
     didParseCell: (hook) => {
+      if(hook.section === 'body' && hook.column.index === 4){
+        const rota = hook.cell.raw;
+        if(rota === 'Vencida') hook.cell.styles.textColor = [200, 40, 55];
+        else if(rota === 'En trámite') hook.cell.styles.textColor = [190, 130, 20];
+        else if(rota === 'Vigente') hook.cell.styles.textColor = [30, 150, 90];
+        hook.cell.styles.fontStyle = 'bold';
+      }
       if(hook.section === 'body' && hook.column.index === 5){
         const estado = hook.cell.raw;
         if(estado === 'Vencida') hook.cell.styles.textColor = [200, 40, 55];
@@ -1645,7 +1667,7 @@ function render(){
         <td class="nombre cell-nombre" data-label="Nombre">${escapeHtml(e.nombre)}</td>
         <td class="cuil" data-label="CUIL">${escapeHtml(e.cuil)}</td>
         <td class="fecha" data-label="Vencimiento">${fmtFecha(e.vencimiento)}</td>
-        <td class="dias" data-label="Días">${e.dias >= 0 ? e.dias + 'd' : e.dias + 'd'}</td>
+        <td data-label="Rota">${e.rota ? `<span class="pill ${rotaClase(e.rota)}"><span class="d"></span>${escapeHtml(e.rota)}</span>` : '<span class="pill" style="color:var(--text-dim);">—</span>'}</td>
         <td data-label="Estado"><span class="pill ${e.estado}"><span class="d"></span>${estadoLabel(e.estado)}</span></td>
         <td class="cuil" data-label="Cabecera">${e.cabecera ? escapeHtml(e.cabecera) : '—'}</td>
         <td class="cell-actions">
@@ -1936,6 +1958,7 @@ function openModal(id){
     document.getElementById('fCuil').value = emp.cuil;
     document.getElementById('fVencimiento').value = emp.vencimiento;
     document.getElementById('fCabecera').value = emp.cabecera || '';
+    document.getElementById('fRota').value = emp.rota || '';
   } else {
     document.getElementById('modalTitle').textContent = 'Nuevo empleado';
     document.getElementById('fLegajo').value = '';
@@ -1943,6 +1966,7 @@ function openModal(id){
     document.getElementById('fCuil').value = '';
     document.getElementById('fVencimiento').value = '';
     document.getElementById('fCabecera').value = '';
+    document.getElementById('fRota').value = '';
   }
   overlay.classList.add('show');
   document.getElementById('fLegajo').focus();
@@ -1958,6 +1982,7 @@ async function saveModal(){
   const cuil = document.getElementById('fCuil').value.trim();
   const vencimiento = document.getElementById('fVencimiento').value;
   const cabecera = document.getElementById('fCabecera').value || null;
+  const rota = document.getElementById('fRota').value || null;
   if(!legajo || !nombre || !cuil || !vencimiento){
     document.getElementById('fError').style.display = 'block';
     return;
@@ -1965,11 +1990,11 @@ async function saveModal(){
   document.getElementById('saveBtn').disabled = true;
   if(state.editingId){
     const emp = state.empleados.find(e => e.id === state.editingId);
-    const updated = { ...emp, legajo, nombre: nombre.toUpperCase(), cuil, vencimiento, cabecera };
+    const updated = { ...emp, legajo, nombre: nombre.toUpperCase(), cuil, vencimiento, cabecera, rota };
     const ok = await editarEmpleado(updated);
     if(ok) Object.assign(emp, updated);
   } else {
-    const nuevo = { id: uid(), legajo, nombre: nombre.toUpperCase(), cuil, vencimiento, cabecera };
+    const nuevo = { id: uid(), legajo, nombre: nombre.toUpperCase(), cuil, vencimiento, cabecera, rota };
     const ok = await crearEmpleado(nuevo);
     if(ok) state.empleados.push(nuevo);
   }
